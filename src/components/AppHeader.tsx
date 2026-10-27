@@ -72,7 +72,7 @@ export function AppHeader({ role }: { role: UserRole }) {
     <>
       <header className="sticky top-0 z-30 border-b border-ink/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-8 px-4 md:h-16 md:px-6">
-          <Link href={items[0].href}>
+          <Link href={items[0].href} className="flex shrink-0">
             <Logo />
           </Link>
 
