@@ -1,4 +1,15 @@
-import type { TicketCategory, TicketPriority, TicketStatus } from "@/types";
+import type { TicketCategory, TicketPriority, TicketStatus, UserRole } from "@/types";
+
+export const ROLE_LABEL: Record<UserRole, string> = {
+  employee: "직원",
+  admin: "전산 담당자",
+};
+
+// 역할별 첫 화면
+export const ROLE_HOME: Record<UserRole, string> = {
+  employee: "/chat",
+  admin: "/admin/board",
+};
 
 export const CATEGORY_LABEL: Record<TicketCategory, string> = {
   network: "네트워크",
