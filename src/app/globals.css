@@ -6,6 +6,23 @@
   --color-ink: #1a1d29;
   --color-background: #f5f7fb;
   --font-sans: var(--font-pretendard);
+
+  /* 심전도 스윕: 왼쪽부터 드러나고 → 잠깐 유지 → 사라짐 */
+  --animate-ecg-sweep: ecg-sweep 3.2s linear infinite;
+  @keyframes ecg-sweep {
+    0% {
+      clip-path: inset(0 100% 0 0);
+      opacity: 1;
+    }
+    65% {
+      clip-path: inset(0 0 0 0);
+      opacity: 1;
+    }
+    100% {
+      clip-path: inset(0 0 0 0);
+      opacity: 0;
+    }
+  }
 }
 
 body {

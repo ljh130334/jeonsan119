@@ -36,14 +36,18 @@ export function LoginForm({ employee, admin }: { employee: Profile; admin: Profi
               aria-checked={active}
               onClick={() => setSelected(p)}
               className={`flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-colors ${
-                active ? "border-primary bg-primary/5" : "border-transparent bg-background hover:bg-ink/5"
+                active ? "border-primary bg-primary/5" : "border-ink/15 bg-white hover:border-ink/30"
               }`}
             >
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white">
+              <span
+                className={`flex size-12 shrink-0 items-center justify-center rounded-2xl transition-colors ${
+                  active ? "bg-white" : "bg-background"
+                }`}
+              >
                 <RoleIcon role={p.role} className="size-9" />
               </span>
               <span className="flex-1">
-                <span className={`block text-[17px] font-bold ${active ? "text-primary" : ""}`}>
+                <span className="block text-[17px] font-bold">
                   {ROLE_LABEL[p.role]}
                 </span>
                 <span className="mt-0.5 block text-[13px] text-ink/50">{ROLE_DESC[p.role]}</span>

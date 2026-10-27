@@ -1,3 +1,4 @@
+import { HeartbeatLine } from "@/components/HeartbeatLine";
 import { Logo } from "@/components/Logo";
 import { getProfiles } from "@/lib/api";
 import { LoginForm } from "./LoginForm";
@@ -10,8 +11,11 @@ export default async function LoginPage() {
   if (!employee || !admin) throw new Error("목업 사용자가 없습니다.");
 
   return (
-    <main className="flex flex-1 flex-col bg-white md:items-center md:justify-center md:bg-background md:px-6 md:py-16">
-      <div className="flex w-full flex-1 flex-col px-5 pt-14 pb-6 md:max-w-md md:flex-none md:rounded-3xl md:bg-white md:p-10 md:shadow-xl md:shadow-ink/5">
+    <main className="relative flex flex-1 flex-col overflow-hidden bg-white md:items-center md:justify-center md:bg-background md:px-6 md:py-16">
+      {/* 모바일: 카드와 버튼 사이 빈 공간에 박동 2개 / PC: 화면 세로 중앙에 박동 4개 */}
+      <HeartbeatLine beats={2} className="absolute inset-x-0 top-[68%] -translate-y-1/2 md:hidden" />
+      <HeartbeatLine beats={4} className="absolute inset-x-0 top-1/2 hidden -translate-y-1/2 md:block" />
+      <div className="relative flex w-full flex-1 flex-col px-5 pt-14 pb-6 md:max-w-md md:flex-none md:rounded-3xl md:bg-white md:p-10 md:shadow-xl md:shadow-ink/5">
         <Logo />
         <h1 className="mt-10 text-[26px] leading-snug font-extrabold">
           어떤 역할로
