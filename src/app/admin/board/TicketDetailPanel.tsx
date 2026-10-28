@@ -4,17 +4,18 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { addTicketNote, assignTicket, getTicketNotes } from "@/lib/api";
+import { addTicketNote, assignTicket, getTicketNotes, updateTicketStatus } from "@/lib/api";
 import {
   CATEGORY_LABEL,
   PRIORITY_COLOR,
   PRIORITY_LABEL,
   STATUS_COLOR,
   STATUS_LABEL,
+  STATUS_ORDER,
   formatDateTime,
   formatTicketId,
 } from "@/lib/constants";
-import type { Profile, Ticket, TicketNote } from "@/types";
+import type { Profile, Ticket, TicketNote, TicketStatus } from "@/types";
 
 interface TicketDetailPanelProps {
   ticket: Ticket;
@@ -49,6 +50,11 @@ export function TicketDetailPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // 드래그와 같은 api 사용 → started_at/resolved_at 규칙 동일하게 적용
+  function handleStatus(status: string) {
+    updateTicketStatus(ticket.id, status as TicketStatus).then(onChange);
+  }
+
   function handleAssign(assigneeId: string) {
     assignTicket(ticket.id, assigneeId).then(onChange);
   }
@@ -80,7 +86,7 @@ export function TicketDetailPanel({
               <Badge className={PRIORITY_COLOR[ticket.priority]}>{PRIORITY_LABEL[ticket.priority]}</Badge>
               <Badge className="bg-background text-ink/60">{CATEGORY_LABEL[ticket.category]}</Badge>
             </div>
-            <h2 className="mt-2 text-xl leading-snug font-extrabold">{ticket.title}</h2>
+            <h2 className="mt-3 text-xl leading-snug font-extrabold">{ticket.title}</h2>
           </div>
           <button
             onClick={onClose}
@@ -99,6 +105,15 @@ export function TicketDetailPanel({
             <dd className="font-semibold">
               {requester?.name ?? "알 수 없음"}
               {requester?.department && <span className="ml-1.5 font-normal text-ink/45">{requester.department}</span>}
+            </dd>
+            <dt className="text-ink/45">상태</dt>
+            <dd>
+              <Select
+                aria-label="상태"
+                value={ticket.status}
+                onChange={handleStatus}
+                options={STATUS_ORDER.map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
+              />
             </dd>
             <dt className="text-ink/45">담당자</dt>
             <dd>
