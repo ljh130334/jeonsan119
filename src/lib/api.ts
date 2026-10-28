@@ -23,16 +23,18 @@ export async function getFaqs(): Promise<Faq[]> {
   return [...faqs];
 }
 
+// 목업 원본이 화면 상태와 공유되지 않도록 항상 복사본을 반환
 export async function getTickets(): Promise<Ticket[]> {
-  return [...tickets];
+  return tickets.map((t) => ({ ...t }));
 }
 
 export async function getMyTickets(requesterId: string): Promise<Ticket[]> {
-  return tickets.filter((t) => t.requester_id === requesterId);
+  return tickets.filter((t) => t.requester_id === requesterId).map((t) => ({ ...t }));
 }
 
 export async function getTicket(id: number): Promise<Ticket | null> {
-  return tickets.find((t) => t.id === id) ?? null;
+  const ticket = tickets.find((t) => t.id === id);
+  return ticket ? { ...ticket } : null;
 }
 
 export interface CreateTicketInput {
@@ -58,7 +60,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     resolved_at: null,
   };
   tickets.push(ticket);
-  return ticket;
+  return { ...ticket };
 }
 
 export async function updateTicketStatus(id: number, status: TicketStatus): Promise<Ticket> {
@@ -79,7 +81,7 @@ export async function assignTicket(id: number, assigneeId: string | null): Promi
 }
 
 export async function getTicketNotes(ticketId: number): Promise<TicketNote[]> {
-  return ticketNotes.filter((n) => n.ticket_id === ticketId);
+  return ticketNotes.filter((n) => n.ticket_id === ticketId).map((n) => ({ ...n }));
 }
 
 export async function addTicketNote(
@@ -95,7 +97,7 @@ export async function addTicketNote(
     created_at: new Date().toISOString(),
   };
   ticketNotes.push(note);
-  return note;
+  return { ...note };
 }
 
 function findTicket(id: number): Ticket {

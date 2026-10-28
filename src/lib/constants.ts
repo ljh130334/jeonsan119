@@ -48,3 +48,24 @@ export const STATUS_COLOR: Record<TicketStatus, string> = {
 export function formatTicketId(id: number): string {
   return `#${String(id).padStart(4, "0")}`;
 }
+
+// 기간 표시: 35분 / 3시간 / 2일 4시간
+export function formatDuration(ms: number): string {
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  if (minutes < 60) return `${minutes}분`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간`;
+  const days = Math.floor(hours / 24);
+  const restHours = hours % 24;
+  return restHours ? `${days}일 ${restHours}시간` : `${days}일`;
+}
+
+// 일시 표시: 10월 26일 오전 09:12
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
