@@ -1,5 +1,6 @@
 // 모든 데이터 접근은 이 파일을 통한다. 추후 내부 구현만 Supabase 호출로 교체.
 import type {
+  AiResult,
   ChatMessage,
   Faq,
   Profile,
@@ -98,6 +99,43 @@ export async function addTicketNote(
   };
   ticketNotes.push(note);
   return { ...note };
+}
+
+// 목업 분류용 키워드 (실제로는 AI가 판단)
+const CATEGORY_KEYWORDS: Record<TicketCategory, string[]> = {
+  network: ["인터넷", "네트워크", "랜선", "와이파이", "wifi", "접속", "vpn"],
+  hardware: ["프린터", "모니터", "키보드", "마우스", "pc", "컴퓨터", "본체", "전원"],
+  software: ["한글", "hwp", "엑셀", "프로그램", "설치", "업데이트", "오류"],
+  account: ["비밀번호", "계정", "로그인", "권한", "인증"],
+  etc: [],
+};
+const URGENT_KEYWORDS = ["급", "긴급", "빨리", "당장", "지금", "회의", "전체"];
+
+// 챗봇 응답 + 분류를 한 번에 반환. 지금은 키워드 매칭 목업 → 추후 Route Handler(AI 호출)로 교체
+export async function sendChatMessage(message: string): Promise<AiResult> {
+  await new Promise((resolve) => setTimeout(resolve, 900)); // 응답 대기 흉내
+  const text = message.toLowerCase();
+  const includesAny = (words: string[]) => words.some((w) => text.includes(w));
+
+  const faq = faqs.find((f) => includesAny(f.keywords));
+  const category =
+    faq?.category ??
+    (Object.keys(CATEGORY_KEYWORDS) as TicketCategory[]).find((c) => includesAny(CATEGORY_KEYWORDS[c])) ??
+    "etc";
+  const priority: TicketPriority = includesAny(URGENT_KEYWORDS) ? "urgent" : "normal";
+  const firstLine = message.trim().split("\n")[0];
+
+  return {
+    resolved_by_faq: Boolean(faq),
+    faq_id: faq?.id ?? null,
+    reply: faq
+      ? faq.answer
+      : "FAQ로 바로 해결하기 어려운 문의예요. 담당자에게 전달할게요.",
+    category,
+    priority,
+    title: firstLine.length > 30 ? `${firstLine.slice(0, 29)}…` : firstLine,
+    summary: message.trim(),
+  };
 }
 
 function findTicket(id: number): Ticket {
