@@ -19,6 +19,7 @@ import {
   type DragStartEvent,
   type DropAnimation,
 } from "@dnd-kit/core";
+import { Select } from "@/components/ui/Select";
 import { getProfiles, getTickets, updateTicketStatus } from "@/lib/api";
 import {
   CATEGORY_LABEL,
@@ -133,26 +134,26 @@ export function KanbanBoard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <FilterSelect
-            label="카테고리"
+          <Select
+            aria-label="카테고리"
             value={category}
             onChange={(v) => setCategory(v as TicketCategory | "all")}
-          >
-            <option value="all">전체 카테고리</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABEL[c]}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterSelect label="담당자" value={assignee} onChange={setAssignee}>
-            <option value="all">전체 담당자</option>
-            {admins.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </FilterSelect>
+            options={[
+              { value: "all", label: "전체 카테고리" },
+              ...CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] })),
+            ]}
+            className="flex-1 md:w-36 md:flex-none"
+          />
+          <Select
+            aria-label="담당자"
+            value={assignee}
+            onChange={setAssignee}
+            options={[
+              { value: "all", label: "전체 담당자" },
+              ...admins.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+            className="flex-1 md:w-36 md:flex-none"
+          />
         </div>
       </div>
 
@@ -259,28 +260,5 @@ function Column({
         )}
       </div>
     </section>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-10 rounded-xl border border-ink/15 bg-white px-3 text-sm font-semibold focus:border-primary focus:outline-none"
-    >
-      {children}
-    </select>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { addTicketNote, assignTicket, getTicketNotes } from "@/lib/api";
 import {
   CATEGORY_LABEL,
@@ -101,18 +102,15 @@ export function TicketDetailPanel({
             </dd>
             <dt className="text-ink/45">담당자</dt>
             <dd>
-              <select
+              <Select
+                aria-label="담당자"
                 value={ticket.assignee_id ?? ""}
-                onChange={(e) => handleAssign(e.target.value)}
-                className="h-9 w-full rounded-lg border border-ink/15 bg-white px-2.5 font-semibold focus:border-primary focus:outline-none"
-              >
-                {ticket.assignee_id === null && <option value="">미배정</option>}
-                {admins.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                onChange={handleAssign}
+                options={[
+                  ...(ticket.assignee_id === null ? [{ value: "", label: "미배정" }] : []),
+                  ...admins.map((a) => ({ value: a.id, label: a.name })),
+                ]}
+              />
             </dd>
             <dt className="text-ink/45">접수</dt>
             <dd>{formatDateTime(ticket.created_at)}</dd>
