@@ -6,7 +6,7 @@ import {
   CATEGORY_LABEL,
   PRIORITY_COLOR,
   PRIORITY_LABEL,
-  formatDuration,
+  formatElapsed,
   formatTicketId,
 } from "@/lib/constants";
 import type { Ticket } from "@/types";
@@ -17,14 +17,6 @@ interface TicketCardProps {
   now: number;
   selected?: boolean;
   dragging?: boolean; // DragOverlay로 들고 있는 카드
-}
-
-function elapsedText(ticket: Ticket, now: number): string {
-  const created = new Date(ticket.created_at).getTime();
-  if (ticket.status === "done" && ticket.resolved_at) {
-    return `${formatDuration(new Date(ticket.resolved_at).getTime() - created)} 만에 완료`;
-  }
-  return `${formatDuration(now - created)} 경과`;
 }
 
 export function TicketCardView({ ticket, assigneeName, now, selected, dragging }: TicketCardProps) {
@@ -54,7 +46,7 @@ export function TicketCardView({ ticket, assigneeName, now, selected, dragging }
           </span>
           {assigneeName ?? "미배정"}
         </span>
-        <span className="text-ink/40">{elapsedText(ticket, now)}</span>
+        <span className="text-ink/40">{formatElapsed(ticket, now)}</span>
       </div>
     </div>
   );

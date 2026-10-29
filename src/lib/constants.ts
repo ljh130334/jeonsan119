@@ -1,4 +1,4 @@
-import type { TicketCategory, TicketPriority, TicketStatus, UserRole } from "@/types";
+import type { Ticket, TicketCategory, TicketPriority, TicketStatus, UserRole } from "@/types";
 
 export const ROLE_LABEL: Record<UserRole, string> = {
   employee: "직원",
@@ -68,4 +68,13 @@ export function formatDateTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+// 티켓 경과 표시: 완료면 처리 소요시간, 아니면 접수 후 경과시간
+export function formatElapsed(ticket: Ticket, now: number): string {
+  const created = new Date(ticket.created_at).getTime();
+  if (ticket.status === "done" && ticket.resolved_at) {
+    return `${formatDuration(new Date(ticket.resolved_at).getTime() - created)} 만에 완료`;
+  }
+  return `${formatDuration(now - created)} 경과`;
 }

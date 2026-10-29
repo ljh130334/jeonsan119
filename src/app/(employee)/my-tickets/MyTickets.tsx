@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { getMyTickets, getProfiles } from "@/lib/api";
@@ -12,6 +13,7 @@ import {
   STATUS_LABEL,
   STATUS_ORDER,
   formatDateTime,
+  formatElapsed,
   formatTicketId,
 } from "@/lib/constants";
 import { useAuthStore } from "@/store/auth";
@@ -24,6 +26,12 @@ export function MyTickets() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [tab, setTab] = useState<TicketStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [now] = useState(() => Date.now());
+  const router = useRouter();
+  // 챗봇 접수 카드에서 ?id=번호로 들어오면 해당 티켓 상세를 바로 연다
+  const searchParams = useSearchParams();
+  const linkedId = Number(searchParams.get("id")) || null;
+  const openId = selectedId ?? linkedId;
 
   useEffect(() => {
     if (!user) return;
@@ -34,11 +42,15 @@ export function MyTickets() {
     });
   }, [user]);
 
-  const closePanel = useCallback(() => setSelectedId(null), []);
+  const closePanel = useCallback(() => {
+    setSelectedId(null);
+    if (linkedId !== null) router.replace("/my-tickets", { scroll: false });
+  }, [linkedId, router]);
 
   const all = tickets ?? [];
   const visible = tab === "all" ? all : all.filter((t) => t.status === tab);
-  const selected = all.find((t) => t.id === selectedId) ?? null;
+  const selected = all.find((t) => t.id === openId) ?? null;
+  const nameOf = (id: string | null) => profiles.find((p) => p.id === id)?.name ?? null;
   const tabs: { value: TicketStatus | "all"; label: string; count: number }[] = [
     { value: "all", label: "전체", count: all.length },
     ...STATUS_ORDER.map((s) => ({
@@ -99,7 +111,7 @@ export function MyTickets() {
               <button
                 onClick={() => setSelectedId(t.id)}
                 className={`w-full rounded-2xl border bg-white p-4 text-left transition-colors md:p-5 ${
-                  t.id === selectedId ? "border-primary ring-1 ring-primary" : "border-ink/10 hover:border-ink/20"
+                  t.id === openId ? "border-primary ring-1 ring-primary" : "border-ink/10 hover:border-ink/20"
                 }`}
               >
                 <div className="flex items-center gap-1.5">
@@ -115,6 +127,15 @@ export function MyTickets() {
                 <p className="mt-1 text-xs text-ink/45">
                   {CATEGORY_LABEL[t.category]} · {formatDateTime(t.created_at)} 접수
                 </p>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-ink/5 pt-3 text-xs">
+                  <span className="flex min-w-0 items-center gap-1.5 font-semibold text-ink/70">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                      {nameOf(t.assignee_id)?.slice(0, 1) ?? "?"}
+                    </span>
+                    <span className="truncate">{nameOf(t.assignee_id) ?? "배정 대기 중"}</span>
+                  </span>
+                  <span className="shrink-0 text-ink/40">{formatElapsed(t, now)}</span>
+                </div>
               </button>
             </li>
           ))}
@@ -125,7 +146,7 @@ export function MyTickets() {
         <MyTicketPanel
           key={selected.id}
           ticket={selected}
-          assigneeName={profiles.find((p) => p.id === selected.assignee_id)?.name ?? null}
+          assigneeName={nameOf(selected.assignee_id)}
           onClose={closePanel}
         />
       )}

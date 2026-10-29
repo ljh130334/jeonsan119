@@ -288,7 +288,7 @@ function TicketReceipt({ ticket, assigneeName }: { ticket: Ticket; assigneeName:
         <dd className="font-semibold">{assigneeName}</dd>
       </dl>
       <Link
-        href="/my-tickets"
+        href={`/my-tickets?id=${ticket.id}`}
         className="mt-4 flex h-10 items-center justify-center rounded-xl bg-background text-sm font-semibold text-ink/70 transition-colors hover:bg-ink/5"
       >
         내 문의에서 보기
