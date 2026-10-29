@@ -23,7 +23,14 @@ export function StatsDashboard() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            <StatCard label="전체 티켓" value={stats.total} unit="건" />
+            <StatCard
+              label="전체 티켓"
+              value={stats.total}
+              unit="건"
+              caption={`완료 ${stats.byStatus.done}건 · 처리율 ${
+                stats.total ? Math.round((stats.byStatus.done / stats.total) * 100) : 0
+              }%`}
+            />
             <StatCard label="접수" value={stats.byStatus.open} unit="건" caption="처리 대기 중" />
             <StatCard label="처리중" value={stats.byStatus.in_progress} unit="건" caption="담당자 처리 중" />
             <StatCard
@@ -38,7 +45,11 @@ export function StatsDashboard() {
               <CategoryChart byCategory={stats.byCategory} />
             </Panel>
             <Panel title="우선순위 비율">
-              <PriorityMeter urgent={stats.byPriority.urgent} normal={stats.byPriority.normal} />
+              <PriorityMeter
+                urgent={stats.byPriority.urgent}
+                normal={stats.byPriority.normal}
+                openUrgent={stats.openUrgent}
+              />
             </Panel>
           </div>
         </>
@@ -85,27 +96,55 @@ function CategoryChart({ byCategory }: { byCategory: Record<TicketCategory, numb
     .map((c) => ({ label: CATEGORY_LABEL[c], count: byCategory[c] }))
     .sort((a, b) => b.count - a.count);
 
+  if (data.every((d) => d.count === 0)) {
+    return (
+      <p className="mt-4 flex h-64 items-center justify-center rounded-xl border-2 border-dashed border-ink/10 text-sm text-ink/35">
+        아직 티켓이 없어요
+      </p>
+    );
+  }
+
   return (
-    <div className="mt-4 h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 32, bottom: 0, left: 0 }} barCategoryGap={10}>
-          {/* 막대 끝에 값이 붙어 있으므로 x축·격자는 생략 */}
-          <XAxis type="number" hide domain={[0, "dataMax"]} />
-          <YAxis
-            type="category"
-            dataKey="label"
-            width={76}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: "var(--color-ink)", fillOpacity: 0.7, fontSize: 13 }}
-          />
-          <Tooltip cursor={{ fill: "var(--color-ink)", fillOpacity: 0.04 }} content={<ChartTooltip />} />
-          <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} maxBarSize={28}>
-            <LabelList dataKey="count" position="right" fill="var(--color-ink)" fontSize={13} fontWeight={700} />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <>
+      {/* 차트는 스크린리더가 읽지 못하므로 같은 내용을 표로 제공 */}
+      <table className="sr-only">
+        <caption>카테고리별 티켓 수</caption>
+        <thead>
+          <tr>
+            <th scope="col">카테고리</th>
+            <th scope="col">티켓 수</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((d) => (
+            <tr key={d.label}>
+              <th scope="row">{d.label}</th>
+              <td>{d.count}건</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="mt-4 h-64" aria-hidden>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 32, bottom: 0, left: 0 }} barCategoryGap={10}>
+            {/* 막대 끝에 값이 붙어 있으므로 x축·격자는 생략 */}
+            <XAxis type="number" hide domain={[0, "dataMax"]} />
+            <YAxis
+              type="category"
+              dataKey="label"
+              width={76}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "var(--color-ink)", fillOpacity: 0.7, fontSize: 13 }}
+            />
+            <Tooltip cursor={{ fill: "var(--color-ink)", fillOpacity: 0.04 }} content={<ChartTooltip />} />
+            <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} maxBarSize={28}>
+              <LabelList dataKey="count" position="right" fill="var(--color-ink)" fontSize={13} fontWeight={700} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </>
   );
 }
 
@@ -120,7 +159,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
 }
 
 // 두 값의 비율이라 파이 대신 막대 미터로 표시. 긴급은 브랜드 규칙대로 coral
-function PriorityMeter({ urgent, normal }: { urgent: number; normal: number }) {
+function PriorityMeter({ urgent, normal, openUrgent }: { urgent: number; normal: number; openUrgent: number }) {
   const total = urgent + normal;
   const urgentPct = total ? Math.round((urgent / total) * 100) : 0;
   const rows = [
@@ -161,6 +200,22 @@ function PriorityMeter({ urgent, normal }: { urgent: number; normal: number }) {
           </div>
         ))}
       </dl>
+
+      {/* 손대지 않은 긴급 건은 경고(coral)로 강조. 색만으로 구분하지 않게 아이콘+문구 함께 */}
+      <p
+        className={`mt-5 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${
+          openUrgent > 0 ? "bg-coral/10 text-coral" : "bg-background text-ink/50"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          {openUrgent > 0 ? (
+            <path d="M12 9v4m0 4h.01M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+          ) : (
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          )}
+        </svg>
+        {openUrgent > 0 ? `처리 시작 전 긴급 ${openUrgent}건` : "처리 시작 전 긴급 건이 없어요"}
+      </p>
     </div>
   );
 }

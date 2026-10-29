@@ -86,6 +86,7 @@ export interface TicketStats {
   byStatus: Record<TicketStatus, number>;
   byCategory: Record<TicketCategory, number>;
   byPriority: Record<TicketPriority, number>;
+  openUrgent: number; // 아직 처리 시작 전(접수 상태)인 긴급 건
   resolvedCount: number; // 평균 처리시간 계산에 쓰인 완료 건수
   avgResolutionMs: number | null; // 평균 처리시간 = resolved_at - created_at (완료 건 없으면 null)
 }
@@ -96,6 +97,7 @@ export async function getStats(): Promise<TicketStats> {
     byStatus: { open: 0, in_progress: 0, done: 0 },
     byCategory: { network: 0, hardware: 0, software: 0, account: 0, etc: 0 },
     byPriority: { urgent: 0, normal: 0 },
+    openUrgent: 0,
     resolvedCount: 0,
     avgResolutionMs: null,
   };
@@ -104,6 +106,7 @@ export async function getStats(): Promise<TicketStats> {
     stats.byStatus[t.status]++;
     stats.byCategory[t.category]++;
     stats.byPriority[t.priority]++;
+    if (t.priority === "urgent" && t.status === "open") stats.openUrgent++;
     if (t.status === "done" && t.resolved_at) {
       stats.resolvedCount++;
       resolvedTotalMs += new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime();
