@@ -23,7 +23,7 @@ export const faqs: Faq[] = [
     category: "account",
     question: "행정포털 비밀번호를 잊어버렸어요.",
     answer: "로그인 화면의 '비밀번호 초기화'를 눌러 공무원증 번호로 본인 인증 후 재설정할 수 있습니다.",
-    keywords: ["비밀번호", "초기화", "로그인", "패스워드"],
+    keywords: ["비밀번호", "초기화", "패스워드"],
   },
   {
     id: 2,
@@ -44,7 +44,7 @@ export const faqs: Faq[] = [
     category: "software",
     question: "한글(HWP) 프로그램이 실행되지 않아요.",
     answer: "PC를 재부팅한 뒤 다시 실행해 보세요. 계속되면 라이선스 만료일 수 있으니 문의를 접수해 주세요.",
-    keywords: ["한글", "hwp", "한컴", "실행"],
+    keywords: ["한글", "hwp", "한컴"],
   },
 ];
 

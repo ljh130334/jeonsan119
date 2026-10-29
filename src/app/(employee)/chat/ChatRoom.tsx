@@ -12,7 +12,7 @@ import type { AiResult, ChatMessage, Profile, Ticket } from "@/types";
 type NewChatItem = { kind: "user" | "bot"; content: string } | { kind: "ticket"; ticket: Ticket };
 type ChatItem = NewChatItem & { id: number };
 
-// FAQ로 답한 직후, "해결 안 됐어요"를 누르면 이 내용으로 티켓을 만든다
+// FAQ로 답한 직후 상태. "해결 안 됐어요"를 누르면 이 내용으로 티켓을 만든다
 interface PendingFaq {
   itemId: number;
   question: string;
@@ -20,7 +20,10 @@ interface PendingFaq {
   log: ChatMessage[];
 }
 
+const RESOLVED = "해결됐어요";
 const NOT_RESOLVED = "해결 안 됐어요";
+// 이보다 짧은 입력(공백 제외)은 접수하지 않고 자세히 물어봄
+const MIN_QUESTION_LENGTH = 5;
 const SUGGESTIONS = ["비밀번호를 잊어버렸어요", "프린터에서 인쇄가 안 돼요", "3층 회의실 인터넷이 안 돼요. 급해요!"];
 
 export function ChatRoom() {
@@ -48,9 +51,9 @@ export function ChatRoom() {
     return id;
   }
 
-  async function fileTicket(question: string, result: AiResult, log: ChatMessage[]) {
-    if (!user) return;
-    const ticket = await createTicket({
+  function fileTicket(question: string, result: AiResult, log: ChatMessage[]) {
+    if (!user) throw new Error("로그인이 필요합니다.");
+    return createTicket({
       title: result.title,
       description: question,
       category: result.category,
@@ -59,8 +62,6 @@ export function ChatRoom() {
       ai_summary: result.summary,
       chat_log: log,
     });
-    push({ kind: "bot", content: "문의를 접수했어요. 담당자가 확인 후 연락드릴게요." });
-    push({ kind: "ticket", ticket });
   }
 
   async function send(text: string) {
@@ -69,6 +70,10 @@ export function ChatRoom() {
     setInput("");
     setPending(null);
     push({ kind: "user", content: question });
+    if (question.replace(/\s/g, "").length < MIN_QUESTION_LENGTH) {
+      push({ kind: "bot", content: "어떤 문제인지 조금 더 자세히 알려주세요.\n예) 프린터에서 인쇄가 안 돼요" });
+      return;
+    }
     setLoading(true);
     try {
       const result = await sendChatMessage(question);
@@ -76,11 +81,14 @@ export function ChatRoom() {
         { role: "user", content: question },
         { role: "assistant", content: result.reply },
       ];
-      const itemId = push({ kind: "bot", content: result.reply });
       if (result.resolved_by_faq) {
+        const itemId = push({ kind: "bot", content: result.reply });
         setPending({ itemId, question, result, log });
       } else {
-        await fileTicket(question, result, log);
+        // 접수가 끝난 뒤 안내 + 접수 카드를 함께 보여줌
+        const ticket = await fileTicket(question, result, log);
+        push({ kind: "bot", content: result.reply });
+        push({ kind: "ticket", ticket });
       }
     } catch {
       push({ kind: "bot", content: "일시적인 오류가 발생했어요. 잠시 후 다시 시도해 주세요." });
@@ -96,12 +104,21 @@ export function ChatRoom() {
     push({ kind: "user", content: NOT_RESOLVED });
     setLoading(true);
     try {
-      await fileTicket(question, result, [...log, { role: "user", content: NOT_RESOLVED }]);
+      const ticket = await fileTicket(question, result, [...log, { role: "user", content: NOT_RESOLVED }]);
+      push({ kind: "bot", content: "문의를 접수했어요. 담당자가 확인 후 연락드릴게요." });
+      push({ kind: "ticket", ticket });
     } catch {
       push({ kind: "bot", content: "접수 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요." });
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleResolved() {
+    if (!pending || loading) return;
+    setPending(null);
+    push({ kind: "user", content: RESOLVED });
+    push({ kind: "bot", content: "도움이 되어 다행이에요. 다른 문제가 있으면 언제든 말씀해 주세요." });
   }
 
   function handleSubmit(e: FormEvent) {
@@ -167,13 +184,22 @@ export function ChatRoom() {
             <BotRow key={item.id} hideAvatar={continued}>
               <Bubble>{item.content}</Bubble>
               {pending?.itemId === item.id && (
-                <button
-                  onClick={handleNotResolved}
-                  disabled={loading}
-                  className="mt-2 rounded-full border border-ink/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink/70 transition-colors hover:border-ink/30 hover:text-ink disabled:opacity-50"
-                >
-                  {NOT_RESOLVED}
-                </button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={handleResolved}
+                    disabled={loading}
+                    className="rounded-full bg-primary/10 px-3.5 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    {RESOLVED}
+                  </button>
+                  <button
+                    onClick={handleNotResolved}
+                    disabled={loading}
+                    className="rounded-full border border-ink/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink/70 transition-colors hover:border-ink/30 hover:text-ink disabled:opacity-50"
+                  >
+                    {NOT_RESOLVED}
+                  </button>
+                </div>
               )}
             </BotRow>
           );

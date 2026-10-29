@@ -109,7 +109,7 @@ const CATEGORY_KEYWORDS: Record<TicketCategory, string[]> = {
   account: ["비밀번호", "계정", "로그인", "권한", "인증"],
   etc: [],
 };
-const URGENT_KEYWORDS = ["급", "긴급", "빨리", "당장", "지금", "회의", "전체"];
+const URGENT_KEYWORDS = ["급", "긴급", "빨리", "당장", "회의", "전체"];
 
 // 챗봇 응답 + 분류를 한 번에 반환. 지금은 키워드 매칭 목업 → 추후 Route Handler(AI 호출)로 교체
 export async function sendChatMessage(message: string): Promise<AiResult> {
@@ -117,12 +117,14 @@ export async function sendChatMessage(message: string): Promise<AiResult> {
   const text = message.toLowerCase();
   const includesAny = (words: string[]) => words.some((w) => text.includes(w));
 
-  const faq = faqs.find((f) => includesAny(f.keywords));
+  const matched = faqs.find((f) => includesAny(f.keywords));
   const category =
-    faq?.category ??
+    matched?.category ??
     (Object.keys(CATEGORY_KEYWORDS) as TicketCategory[]).find((c) => includesAny(CATEGORY_KEYWORDS[c])) ??
     "etc";
   const priority: TicketPriority = includesAny(URGENT_KEYWORDS) ? "urgent" : "normal";
+  // 긴급 문의는 FAQ로 돌려보내지 않고 바로 접수
+  const faq = priority === "urgent" ? undefined : matched;
   const firstLine = message.trim().split("\n")[0];
 
   return {
@@ -130,7 +132,9 @@ export async function sendChatMessage(message: string): Promise<AiResult> {
     faq_id: faq?.id ?? null,
     reply: faq
       ? faq.answer
-      : "FAQ로 바로 해결하기 어려운 문의예요. 담당자에게 전달할게요.",
+      : priority === "urgent"
+        ? "긴급 문의로 확인했어요. 담당자에게 바로 접수했어요."
+        : "자주 묻는 질문으로 해결하기 어려운 문의라 담당자에게 접수했어요.",
     category,
     priority,
     title: firstLine.length > 30 ? `${firstLine.slice(0, 29)}…` : firstLine,
