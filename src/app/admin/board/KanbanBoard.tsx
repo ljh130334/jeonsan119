@@ -10,7 +10,8 @@ import {
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   defaultDropAnimationSideEffects,
   useDroppable,
   useSensor,
@@ -75,8 +76,10 @@ export function KanbanBoard() {
   }, []);
 
   const sensors = useSensors(
-    // 6px 이상 움직여야 드래그 시작 → 그냥 클릭은 상세 열기
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // 마우스: 6px 이상 움직여야 드래그 시작 → 그냥 클릭은 상세 열기
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // 터치: 꾹 누르면(250ms) 드래그 시작 → 그냥 밀면 보드 가로 스크롤
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
   );
 
   const profileMap = useMemo(
@@ -130,7 +133,7 @@ export function KanbanBoard() {
         <div>
           <h1 className="text-2xl font-extrabold">칸반보드</h1>
           <p className="mt-1 text-sm text-ink/50">
-            카드를 끌어서 상태를 바꾸고, 눌러서 상세를 확인해요.
+            카드를 끌어서(모바일은 꾹 눌러서) 상태를 바꾸고, 눌러서 상세를 확인해요.
           </p>
         </div>
         <div className="flex gap-2">
@@ -166,8 +169,15 @@ export function KanbanBoard() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDragCancel={() => setDraggingId(null)}
+          // 모바일 가로 스크롤 보드에서 가장자리 자동 스크롤이 너무 빨라 가운데 열을 지나치지 않게 감속
+          autoScroll={{ acceleration: 5, threshold: { x: 0.15, y: 0.2 } }}
         >
-          <div className="-mx-4 mt-6 flex snap-x gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+          {/* 드래그 중엔 스냅을 꺼서 자동 스크롤이 열 경계로 튀지 않게 */}
+          <div
+            className={`-mx-4 mt-6 flex gap-4 overflow-x-auto px-4 pb-2 scroll-px-4 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 ${
+              draggingId === null ? "snap-x" : ""
+            }`}
+          >
             {STATUS_ORDER.map((status) => {
               const columnTickets = visible
                 .filter((t) => t.status === status)

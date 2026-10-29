@@ -74,7 +74,8 @@ export function DraggableTicketCard(props: TicketCardProps & { onOpen: () => voi
         if (e.key === "Enter") onOpen();
       }}
       // 집을 때만 서서히 흐려지고, 놓은 뒤엔 즉시 원래대로(오버레이와 바로 교대)
-      className={`cursor-grab rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:cursor-grabbing ${
+      // 꾹 누를 때 텍스트 선택·iOS 길게누르기 메뉴가 뜨지 않게
+      className={`cursor-grab rounded-2xl outline-none select-none [-webkit-touch-callout:none] focus-visible:ring-2 focus-visible:ring-primary/40 active:cursor-grabbing ${
         isDragging ? "opacity-40 transition-opacity duration-200" : ""
       }`}
     >
