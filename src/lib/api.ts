@@ -81,6 +81,38 @@ export async function assignTicket(id: number, assigneeId: string | null): Promi
   return { ...ticket };
 }
 
+export interface TicketStats {
+  total: number;
+  byStatus: Record<TicketStatus, number>;
+  byCategory: Record<TicketCategory, number>;
+  byPriority: Record<TicketPriority, number>;
+  resolvedCount: number; // 평균 처리시간 계산에 쓰인 완료 건수
+  avgResolutionMs: number | null; // 평균 처리시간 = resolved_at - created_at (완료 건 없으면 null)
+}
+
+export async function getStats(): Promise<TicketStats> {
+  const stats: TicketStats = {
+    total: tickets.length,
+    byStatus: { open: 0, in_progress: 0, done: 0 },
+    byCategory: { network: 0, hardware: 0, software: 0, account: 0, etc: 0 },
+    byPriority: { urgent: 0, normal: 0 },
+    resolvedCount: 0,
+    avgResolutionMs: null,
+  };
+  let resolvedTotalMs = 0;
+  for (const t of tickets) {
+    stats.byStatus[t.status]++;
+    stats.byCategory[t.category]++;
+    stats.byPriority[t.priority]++;
+    if (t.status === "done" && t.resolved_at) {
+      stats.resolvedCount++;
+      resolvedTotalMs += new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime();
+    }
+  }
+  if (stats.resolvedCount > 0) stats.avgResolutionMs = resolvedTotalMs / stats.resolvedCount;
+  return stats;
+}
+
 export async function getTicketNotes(ticketId: number): Promise<TicketNote[]> {
   return ticketNotes.filter((n) => n.ticket_id === ticketId).map((n) => ({ ...n }));
 }
